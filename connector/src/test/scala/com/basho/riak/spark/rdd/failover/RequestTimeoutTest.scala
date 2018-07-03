@@ -8,10 +8,13 @@ import org.junit.rules.ExpectedException
 import org.junit.{After, Rule, Test}
 import shaded.com.basho.riak.protobuf.RiakKvPB._
 import shaded.com.google.protobuf.ByteString
-
 import scala.collection.JavaConverters._
 
+import org.slf4j.{Logger, LoggerFactory}
+
 class RequestTimeoutTest extends AbstractFailoverOfflineTest {
+
+  val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   val _expectedException: ExpectedException = ExpectedException.none()
 
@@ -35,9 +38,9 @@ class RequestTimeoutTest extends AbstractFailoverOfflineTest {
       .build()
 
     override def handleIndexRequest(req: RpbIndexReq): RpbIndexResp = {
-      logInfo("Index Request is going to stuck...")
+      logger.info("Index Request is going to stuck...")
       latch.await()
-      logInfo("Timeout verified. Thread execution continued.")
+      logger.info("Timeout verified. Thread execution continued.")
 
       RpbIndexResp.newBuilder().build()
     }

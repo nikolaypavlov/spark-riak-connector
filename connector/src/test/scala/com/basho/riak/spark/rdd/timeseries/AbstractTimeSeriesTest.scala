@@ -33,21 +33,24 @@ import com.basho.riak.client.core.query.timeseries.FullColumnDescription
 import com.basho.riak.client.core.query.timeseries.Row
 import com.basho.riak.client.core.query.timeseries.TableDefinition
 import com.basho.riak.spark.rdd.AbstractRiakSparkTest
-import org.apache.spark.riak.Logging
+
 import org.apache.spark.sql.types._
 import org.junit.Assert._
 import org.junit.Rule
 import org.junit.rules.ExpectedException
-
 import scala.collection.JavaConversions._
 import scala.util.control.Exception._
+
+import org.slf4j.{Logger, LoggerFactory}
 
 case class TimeSeriesData(time: Long, user_id: String, temperature_k: Double)
 
 /**
   * @author Sergey Galkin <srggal at gmail dot com>
   */
-abstract class AbstractTimeSeriesTest(val createTestData: Boolean = true) extends AbstractRiakSparkTest with Logging {
+abstract class AbstractTimeSeriesTest(val createTestData: Boolean = true) extends AbstractRiakSparkTest {
+
+  val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   val _expectedException: ExpectedException = ExpectedException.none()
 
@@ -155,10 +158,10 @@ abstract class AbstractTimeSeriesTest(val createTestData: Boolean = true) extend
       session.getRiakCluster.execute(fetchProps)
       allCatch either fetchProps.get.getBucketProperties match {
         case Right(_) =>
-          logDebug(s"Table with name '${ns.getBucketTypeAsString}' already exists. Creation is not required.")
+          logger.debug(s"Table with name '${ns.getBucketTypeAsString}' already exists. Creation is not required.")
         case Left(ex) if ex.getCause.isInstanceOf[RiakResponseException]
           && ex.getCause.getMessage.startsWith("No bucket-type named") =>
-          logInfo(s"Table '${ns.getBucketTypeAsString}' is not found. New one will be created.")
+          logger.info(s"Table '${ns.getBucketTypeAsString}' is not found. New one will be created.")
           session.execute(new CreateTable.Builder(tableDefinition)
             .withQuantum(10, TimeUnit.SECONDS) // scalastyle:ignore
             .build())

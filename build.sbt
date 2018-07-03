@@ -122,7 +122,7 @@ lazy val sparkRiakConnectorTestUtils = (project in file("test-utils"))
 
 lazy val commonSettings = Seq(
   organization := "com.basho.riak",
-  version := "2.0.0-SNAPSHOT",
+  version := "2.3.0-SNAPSHOT",
   scalaVersion := "2.11.12",
   crossPaths := true,
   spName := s"basho/$namespace",
@@ -159,7 +159,7 @@ lazy val commonDependencies = Seq(
       "org.powermock"                %  "powermock-api-mockito"     % Versions.powermokc % "test",
       "com.novocode"                 %  "junit-interface"           % Versions.junitInterface % "test",
       "com.basho.riak.test"          %  "riak-test-docker"  % Versions.riakTestDocker % "test",
-      "com.spotify" % "docker-client" % "5.0.2" % "test"
+      "com.spotify" % "docker-client" % "8.11.7" % "test" classifier "shaded"
         exclude("com.fasterxml.jackson.core", "jackson-databind")
         exclude("com.fasterxml.jackson.core", "jackson-annotations")
         exclude("com.fasterxml.jackson.core", "jackson-core")

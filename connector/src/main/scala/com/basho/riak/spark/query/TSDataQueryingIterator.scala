@@ -19,9 +19,11 @@ package com.basho.riak.spark.query
 
 import com.basho.riak.client.core.query.timeseries.Row
 import com.basho.riak.client.core.query.timeseries.ColumnDescription
-import org.apache.spark.riak.Logging
+import org.slf4j.{Logger, LoggerFactory}
 
-class TSDataQueryingIterator(query: QueryTS) extends Iterator[Row] with Logging {
+
+class TSDataQueryingIterator(query: QueryTS) extends Iterator[Row] {
+  val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   private var _iterator: Option[Iterator[Row]] = None
   private val subqueries = query.queryData.iterator
@@ -53,16 +55,16 @@ class TSDataQueryingIterator(query: QueryTS) extends Iterator[Row] with Logging 
   protected[this] def prefetch() = {
     while( subqueries.hasNext && !isPrefetchedDataAvailable) {
       val nextSubQuery = subqueries.next
-      logTrace(s"Prefetching chunk of data: ts-query(token=$nextSubQuery)")
+      logger.trace(s"Prefetching chunk of data: ts-query(token=$nextSubQuery)")
 
       val r = query.nextChunk(nextSubQuery)
 
       r match {
         case (cds, rows) =>
-          if (isTraceEnabled()) {
-            logTrace(s"ts-query($nextSubQuery) returns:\n  columns: ${r._1}\n  data:\n\t ${r._2}")
+          if (logger.isTraceEnabled()) {
+            logger.trace(s"ts-query($nextSubQuery) returns:\n  columns: ${r._1}\n  data:\n\t ${r._2}")
           } else {
-            logDebug(s"ts-query($nextSubQuery) returns:\n  data.size: ${r._2.size}")
+            logger.debug(s"ts-query($nextSubQuery) returns:\n  data.size: ${r._2.size}")
           }
 
           if (cds != null && cds.nonEmpty) {
@@ -75,7 +77,7 @@ class TSDataQueryingIterator(query: QueryTS) extends Iterator[Row] with Logging 
           _iterator = Some(rows.iterator)
 
         case _ => _iterator = None
-          logWarning(s"ts-query(token=$nextSubQuery) returns: NOTHING")
+          logger.warn(s"ts-query(token=$nextSubQuery) returns: NOTHING")
       }
     }
   }

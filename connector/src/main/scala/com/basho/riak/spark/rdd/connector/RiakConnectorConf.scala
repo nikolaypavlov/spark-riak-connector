@@ -18,12 +18,15 @@
 package com.basho.riak.spark.rdd.connector
 
 import java.net.InetAddress
+
 import com.basho.riak.client.core.util.HostAndPort
+
 import org.apache.spark.SparkConf
 import scala.collection.JavaConversions._
 import scala.util.control.NonFatal
+
 import com.basho.riak.client.core.RiakNode
-import org.apache.spark.riak.Logging
+import org.slf4j.{Logger, LoggerFactory}
 
 
 /** Stores configuration of a connection to Riak.
@@ -47,7 +50,7 @@ case class RiakConnectorConf(
   }
 }
 
-object RiakConnectorConf extends Logging {
+object RiakConnectorConf {
   val DEFAULT_MIN_CONNECTIONS = 20
   val DEFAULT_MAX_CONNECTIONS = 50
   val defaultInactivityTimeout = 1000
@@ -56,11 +59,13 @@ object RiakConnectorConf extends Logging {
   val RiakMaxConnectionPerHostProperty = "spark.riak.connections.max"
   val RiakInactivityTimeoutProperty = "spark.riak.connections.inactivity.timeout"
 
+  val logger: Logger = LoggerFactory.getLogger(this.getClass)
+
   private def resolveHost(hostName: String): Option[HostAndPort] = {
     try Some(HostAndPort.fromString(hostName, RiakNode.Builder.DEFAULT_REMOTE_PORT))
     catch {
       case NonFatal(e) =>
-        logError(s"Unknown host '$hostName'", e)
+        logger.error(s"Unknown host '$hostName'", e)
         None
     }
   }

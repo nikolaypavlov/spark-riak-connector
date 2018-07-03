@@ -31,8 +31,8 @@ import com.basho.riak.spark.rdd.connector.{RiakConnector, RiakSession}
 import com.basho.riak.spark.util.{CountingIterator, DataMapper}
 import com.basho.riak.spark.writer.ts.RowDef
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import org.apache.spark.riak.Logging
 import org.apache.spark.TaskContext
+import org.slf4j.{Logger, LoggerFactory}
 
 import scala.collection.JavaConversions._
 import scala.collection._
@@ -42,7 +42,9 @@ abstract class RiakWriter[T, U](
                                    connector: RiakConnector,
                                    bucketDef: BucketDef,
                                    dataMapper: WriteDataMapper[T, U],
-                                   writeConf: WriteConf) extends Serializable with Logging {
+                                   writeConf: WriteConf) extends Serializable {
+
+  val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   // This method should be ported to Riak Java Client
   protected def stringToNumReplicas(qString: String): Quorum = allCatch opt qString.toInt match {
@@ -72,12 +74,12 @@ abstract class RiakWriter[T, U](
       val startTime = System.currentTimeMillis()
       val namespace = new Namespace(bucketDef.bucketType, bucketDef.bucketName)
 
-      logDebug(s"Writing data partition to ${bucketDef.bucketType}.${bucketDef.bucketName}")
+      logger.debug(s"Writing data partition to ${bucketDef.bucketType}.${bucketDef.bucketName}")
       store(session, namespace, rowIterator, dataMapper, writeConf)
 
       val endTime = System.currentTimeMillis()
       val duration = (endTime - startTime) / 1000.0
-      logDebug(s"Writing FINISHED in $duration seconds")
+      logger.debug(s"Writing FINISHED in $duration seconds")
     }
   }
 
@@ -108,7 +110,7 @@ class RiakKVWriter[T](connector: RiakConnector,
       }
       val r = session.execute(builder.build())
       val theRealKey = if (r.hasGeneratedKey) r.getGeneratedKey else key
-      logDebug(s"Value was written: '${r.getLocation}': $value")
+      logger.debug(s"Value was written: '${r.getLocation}': $value")
     }
   }
 }
@@ -128,7 +130,7 @@ class RiakTSWriter[T](connector: RiakConnector,
 
     for ((rowDefs, idx) <- bulkIterator.zipWithIndex) {
       writeSemaphore.acquire()
-      logDebug(s"Writing bulk-${idx + 1} started")
+      logger.debug(s"Writing bulk-${idx + 1} started")
       val rows = rowDefs.map(_.row)
       val builder = new StoreOperation.Builder(ns.getBucketNameAsString).withRows(rows)
       rowDefs.headOption.map(_.columnDescription).flatten.foreach(descr => builder.withColumnDescriptions(descr.toList))
@@ -137,7 +139,7 @@ class RiakTSWriter[T](connector: RiakConnector,
         @Override
         def handle(f: RiakFuture[Void, String]): Unit =
           {
-            logDebug(s"Writing bulk-${idx + 1} finished")
+            logger.debug(s"Writing bulk-${idx + 1} finished")
             if (!f.isSuccess) {
               riakException = Some(f.cause)
             }
@@ -146,7 +148,7 @@ class RiakTSWriter[T](connector: RiakConnector,
       })
       // constantly check if any exception has occurred, throw it from main thread
       riakException.foreach { ex =>
-        logDebug(s"Stopped writing because of exception", ex)
+        logger.debug(s"Stopped writing because of exception", ex)
         throw ex
       }
     }
@@ -156,7 +158,7 @@ class RiakTSWriter[T](connector: RiakConnector,
     writeSemaphore.release(concurrentWritesNumber)
     // if any exception has occurred in latest threads, throw it from main thread
     riakException.foreach { ex =>
-      logDebug(s"Stopped writing because of exception", ex)
+      logger.debug(s"Stopped writing because of exception", ex)
       throw ex
     }
   }

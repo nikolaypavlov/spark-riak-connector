@@ -29,12 +29,12 @@ import com.basho.riak.client.core.netty.RiakResponseException
 import com.basho.riak.client.api.commands.timeseries.CoveragePlan
 import com.basho.riak.spark.rdd.partitioner.PartitioningUtils._
 import com.basho.riak.spark.rdd.connector.RiakConnector
-
 import scala.collection.JavaConversions._
 import scala.util.control.Exception._
+
 import com.basho.riak.client.core.query.timeseries.CoverageEntry
 import com.basho.riak.spark.util.DumpUtils
-import org.apache.spark.riak.Logging
+import org.slf4j.{Logger, LoggerFactory}
 
 /**
  * @author Sergey Galkin <srggal at gmail dot com>
@@ -307,9 +307,9 @@ class AutomaticRangedRiakTSPartitioner(connector: RiakConnector, tableName: Stri
 }
 
 class RiakTSCoveragePlanBasedPartitioner(connector: RiakConnector, tableName: String, schema: Option[StructType],
-                                         columnNames: Option[Seq[String]], filters: Array[Filter], readConf: ReadConf) extends RangedRiakTSPartitioner(tableName, schema, columnNames, filters, readConf)
-with Logging {
+                                         columnNames: Option[Seq[String]], filters: Array[Filter], readConf: ReadConf) extends RangedRiakTSPartitioner(tableName, schema, columnNames, filters, readConf) {
 
+  val logger: Logger = LoggerFactory.getLogger(this.getClass)
   val where = whereClause(filters)
   val (queryRaw, vals) = toSql(columnNames, tableName, schema, where)
   val query = interpolateValues(queryRaw, vals)
@@ -337,10 +337,10 @@ with Logging {
     val coverageEntriesCount = coveragePlan.size
     val partitionsCount = if (splitCount <= coverageEntriesCount) splitCount else coverageEntriesCount
 
-    if (log.isTraceEnabled()) {
+    if (logger.isTraceEnabled()) {
       val cp = coveragePlan.foldLeft(new StringBuilder) { (sb, ce) => sb.append( DumpUtils.dump(ce, "\n      ")).append("\n\n") }
 
-      logTrace("\n----------------------------------------\n" +
+      logger.trace("\n----------------------------------------\n" +
         s" [Auto TS Partitioner]  Requested: split up to $splitCount partitions\n" +
         s"                        Actually: the only $partitionsCount partitions might be created\n" +
         "--\n" +
@@ -361,10 +361,10 @@ with Logging {
 
     val result = partitions.toArray
 
-    if (log.isDebugEnabled()) {
+    if (logger.isDebugEnabled()) {
       val p = result.foldLeft(new StringBuilder) { (sb, r) => sb.append(r.dump()).append("\n") }.toString()
 
-      logInfo("\n----------------------------------------\n" +
+      logger.debug("\n----------------------------------------\n" +
         s" [Auto TS Partitioner]  Requested: split up to $splitCount partitions\n" +
         s"                        Actually: the created partitions are:\n" +
         "--\n" +

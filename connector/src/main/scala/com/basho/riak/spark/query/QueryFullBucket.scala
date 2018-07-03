@@ -10,9 +10,9 @@ import com.basho.riak.client.core.util.BinaryValue
 import com.basho.riak.spark.rdd.connector.RiakConnector
 import com.basho.riak.spark.rdd.{BucketDef, ReadConf}
 import org.apache.commons.lang3.exception.ExceptionUtils
-
 import scala.collection.JavaConversions._
 import scala.util.control.Exception._
+
 
 case class QueryFullBucket(bucket: BucketDef,
                            readConf: ReadConf,
@@ -38,8 +38,8 @@ case class QueryFullBucket(bucket: BucketDef,
          * and re-query chunk using that alternative coverage entry */
         case Left(e) if ExceptionUtils.getRootCause(e).isInstanceOf[NoNodesAvailableException] =>
           val unavailableList = coverageEntry.get :: unavailableEntries
-          logWarning(s"Node '${primaryHost.get}' is not available. Alternative coverage entry must be requested.")
-          logDebug(s"Unable to execute query using current coverage entry: ${coverageEntry.get}.")
+          logger.warn(s"Node '${primaryHost.get}' is not available. Alternative coverage entry must be requested.")
+          logger.debug(s"Unable to execute query using current coverage entry: ${coverageEntry.get}.")
           val cmd = new Builder(bucket.asNamespace())
             .withMinPartitions(readConf.splitCount)
             .withReplaceCoverageEntry(coverageEntry.get)
@@ -48,7 +48,7 @@ case class QueryFullBucket(bucket: BucketDef,
           coverageEntry = riakConnector.withSessionDo(s => s.execute(cmd)) match {
             case response: CoveragePlan.Response if response.iterator.hasNext =>
               val alternative = response.iterator().next()
-              logDebug(s"Alternative coverage entry ($alternative) instead of (${coverageEntry.get}) is received.")
+              logger.debug(s"Alternative coverage entry ($alternative) instead of (${coverageEntry.get}) is received.")
               Some(alternative)
             case _ => throw new IllegalStateException("Unable to get alternative coverage plan")
           }

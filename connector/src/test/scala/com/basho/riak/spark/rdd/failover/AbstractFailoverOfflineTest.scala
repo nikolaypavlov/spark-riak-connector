@@ -4,7 +4,6 @@ import com.basho.riak.client.core.query.Namespace
 import com.basho.riak.client.core.util.HostAndPort
 import com.basho.riak.stub.{RiakMessageHandler, RiakNodeStub}
 import org.apache.commons.lang3.exception.ExceptionUtils
-import org.apache.spark.riak.Logging
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
 import org.hamcrest.{Description, Matchers}
@@ -13,7 +12,7 @@ import org.junit.{After, Before}
 
 import scala.collection.JavaConversions._
 
-abstract class AbstractFailoverOfflineTest extends Logging {
+abstract class AbstractFailoverOfflineTest {
 
   protected final val NAMESPACE = new Namespace("default", "test-bucket")
   protected final val COVERAGE_ENTRIES_COUNT = 64

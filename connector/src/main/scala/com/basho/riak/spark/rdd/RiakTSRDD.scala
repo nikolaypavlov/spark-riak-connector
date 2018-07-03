@@ -22,15 +22,16 @@ import com.basho.riak.spark.query.{QueryTS, TSQueryData}
 import com.basho.riak.spark.rdd.connector.RiakConnector
 import com.basho.riak.spark.rdd.partitioner.{RiakTSPartition, RiakTSPartitioner}
 import com.basho.riak.spark.util.{CountingIterator, DataConvertingIterator, TSConversionUtil}
+
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.{Partition, SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
-
 import scala.reflect.ClassTag
+
 import org.apache.spark.sql.sources.Filter
 import com.basho.riak.spark.rdd.partitioner.{RangedRiakTSPartitioner, SinglePartitionRiakTSPartitioner}
 import com.basho.riak.spark.query.TSDataQueryingIterator
-import org.apache.spark.riak.Logging
+import org.slf4j.{Logger, LoggerFactory}
 
 /**
   * @author Sergey Galkin <srggal at gmail dot com>
@@ -49,7 +50,9 @@ class RiakTSRDD[R] private[spark](
      val query: Option[String] = None,
      val readConf: ReadConf = ReadConf())
     (implicit val ct: ClassTag[R])
-  extends RDD[R](sc, Seq.empty) with Logging {
+  extends RDD[R](sc, Seq.empty) {
+
+  val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   override def getPartitions: Array[Partition] = {
     if (filters.isEmpty)

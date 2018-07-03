@@ -30,10 +30,9 @@ import org.apache.spark.sql.types._
 import org.apache.spark.sql._
 
 import com.basho.riak.spark.query.QueryBucketDef
-import org.apache.spark.riak.Logging
 
 /**
-  * Implements [[BaseRelation]]]], [[InsertableRelation]]]] and [[PrunedFilteredScan]]]]
+  * Implements [[BaseRelation]], [[InsertableRelation]] and [[PrunedFilteredScan]]
   * It inserts data to and scans RiakTS bucket.  It pushs down some filters to SQL.
   *
   * @author Sergey Galkin <srggal at gmail dot com>
@@ -46,7 +45,7 @@ private[riak] class RiakRelation(
         val writeConf: WriteConf,
         override val sqlContext: SQLContext,
         userSpecifiedSchema: Option[StructType])
-  extends BaseRelation with PrunedFilteredScan with InsertableRelation with Logging {
+  extends BaseRelation with PrunedFilteredScan with InsertableRelation {
 
   override def schema: StructType = userSpecifiedSchema match {
     case None =>

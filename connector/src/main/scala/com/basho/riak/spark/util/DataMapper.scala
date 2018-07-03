@@ -19,23 +19,24 @@ package com.basho.riak.spark.util
 
 import com.basho.riak.client.api.convert.JSONConverter
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import org.apache.spark.riak.Logging
+import org.slf4j.{Logger, LoggerFactory}
 
 trait DataMapper extends Serializable {
     DataMapper.ensureInitialized()
 }
 
-object DataMapper extends Logging {
+object DataMapper {
+  val logger: Logger = LoggerFactory.getLogger(this.getClass)
   private var isInitialized = false
 
   def ensureInitialized(): Boolean = {
     if (!isInitialized) {
       // Register Scala module to serialize/deserialize Scala stuff smoothly
       JSONConverter.registerJacksonModule(DefaultScalaModule)
-      logDebug("Jackson DefaultScalaModule has been registered")
+      logger.debug("Jackson DefaultScalaModule has been registered")
       isInitialized = true
     } else {
-      logTrace("Jackson DefaultScalaModule initialization was skipped since module has been registered.")
+      logger.debug("Jackson DefaultScalaModule initialization was skipped since module has been registered.")
     }
     isInitialized
   }

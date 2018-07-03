@@ -8,6 +8,7 @@ import com.basho.riak.spark.rdd.{AbstractRiakSparkTest, RiakTSTests}
 import org.junit.Assert.assertEquals
 import org.junit.experimental.categories.Category
 import org.junit.{After, Before, Test}
+import org.slf4j.{Logger, LoggerFactory}
 
 @Category(Array(classOf[RiakTSTests]))
 class KvStreamingTest extends AbstractRiakSparkTest with SparkStreamingFixture {
@@ -22,7 +23,7 @@ class KvStreamingTest extends AbstractRiakSparkTest with SparkStreamingFixture {
   def setUp(): Unit = {
     port = dataSource.start(client => {
       (0 until VALUES_NUMBER).foreach(i => client.write(ByteBuffer.wrap(s"value-$i\n".getBytes)))
-      logInfo(s"$VALUES_NUMBER values were send to client")
+      logger.info(s"$VALUES_NUMBER values were send to client")
     })
   }
 

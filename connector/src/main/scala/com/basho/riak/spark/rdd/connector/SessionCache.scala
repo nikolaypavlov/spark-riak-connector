@@ -25,7 +25,6 @@ import com.basho.riak.client.api.{RiakClient, RiakCommand}
 import com.basho.riak.client.core.{FutureOperation, RiakCluster, RiakFuture, RiakNode}
 import com.basho.riak.client.core.util.HostAndPort
 import com.google.common.cache._
-
 import scala.collection.JavaConverters._
 import java.util.concurrent.{Executors, ScheduledThreadPoolExecutor, ThreadFactory, TimeUnit}
 
@@ -33,9 +32,9 @@ import io.netty.bootstrap.Bootstrap
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioSocketChannel
 import io.netty.util.concurrent.DefaultThreadFactory
-import org.apache.spark.riak.Logging
-
 import scala.collection.concurrent.TrieMap
+
+import org.slf4j.{Logger, LoggerFactory}
 
 /**
   * Simple [[RiakSession]] Cache/Pool.
@@ -43,7 +42,8 @@ import scala.collection.concurrent.TrieMap
   * @author Sergey Galkin <srggal at gmail dot com>
   * @since 1.2.0
   */
-class SessionCache(val cacheSize: Int) extends Logging {
+class SessionCache(val cacheSize: Int) {
+  val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   // Sessions to be released after timeout
   private val expiredSessions = TrieMap[CachedSession, Long]()
@@ -51,7 +51,7 @@ class SessionCache(val cacheSize: Int) extends Logging {
   private[this] val cachedSessions: LoadingCache[RiakConnectorConf, CachedSession] = {
     val cacheLoader = new CacheLoader[RiakConnectorConf, CachedSession]() {
       override def load(conf: RiakConnectorConf): CachedSession = {
-        logDebug(s"Creating new Riak CachedSession: $conf")
+        logger.debug(s"Creating new Riak CachedSession: $conf")
 
         new CachedSession(conf, createClient(conf), release(_, conf.inactivityTimeout))
 
@@ -69,7 +69,7 @@ class SessionCache(val cacheSize: Int) extends Logging {
         override def onRemoval(notification: RemovalNotification[RiakConnectorConf, CachedSession]): Unit = {
           val (conf, session) = notification.getKey -> notification.getValue
 
-          logDebug(s"Riak CachedSession was evicted: $conf")
+          logger.debug(s"Riak CachedSession was evicted: $conf")
           session.close()
         }
       })
@@ -105,7 +105,7 @@ class SessionCache(val cacheSize: Int) extends Logging {
     lazy val endpointsStr = addresses.mkString("", ", ", "")
 
     try {
-      logDebug(s"Attempting to create RiakClient(java) for $addresses")
+      logger.debug(s"Attempting to create RiakClient(java) for $addresses")
       val builder = new RiakNode.Builder()
         .withMinConnections(conf.minConnections)
         .withMaxConnections(conf.maxConnections)
@@ -153,7 +153,7 @@ class SessionCache(val cacheSize: Int) extends Logging {
   private def releaseImmediately(session: CachedSession): Unit = {
     if (session.getRefCount == 1) {
       evict(session.conf)
-      logTrace(s"Session was released by timeout: ${session.conf}")
+      logger.trace(s"Session was released by timeout: ${session.conf}")
     }
   }
 
@@ -171,7 +171,7 @@ class SessionCache(val cacheSize: Int) extends Logging {
     setDaemon(true)
 
     override def run(): Unit = {
-      logDebug(s"Started checking for expired sessions")
+      logger.debug(s"Started checking for expired sessions")
       try {
         while (!isInterrupted) {
           val now = System.currentTimeMillis
@@ -180,7 +180,7 @@ class SessionCache(val cacheSize: Int) extends Logging {
               try {
                 releaseImmediately(session)
               } catch {
-                case e: Exception => logError(s"Unexpected exception while releasing expired session: ${session.conf}", e)
+                case e: Exception => logger.error(s"Unexpected exception while releasing expired session: ${session.conf}", e)
               }
             }
           }
@@ -188,10 +188,10 @@ class SessionCache(val cacheSize: Int) extends Logging {
         }
       } catch {
         case e: InterruptedException => {
-          logTrace(s"Session Cleaner was interrupted", e)
+          logger.trace(s"Session Cleaner was interrupted", e)
         }
       }
-      logDebug(s"Checking for expired sessions stopped")
+      logger.debug(s"Checking for expired sessions stopped")
     }
   }
   checkForExpiredSessionsThread.start
@@ -226,7 +226,8 @@ private class SessionProxy(session: CachedSession) extends InvocationHandler {
   * @author Sergey Galkin <srggal at gmail dot com>
   * @since 1.2.0
   */
-class CachedSession(val conf: RiakConnectorConf, riakClient: RiakClient, afterClose: CachedSession => Any) extends RiakSession with Logging {
+class CachedSession(val conf: RiakConnectorConf, riakClient: RiakClient, afterClose: CachedSession => Any) extends RiakSession {
+  val logger: Logger = LoggerFactory.getLogger(this.getClass)
   private var closed: Boolean = false
   private val refCount: AtomicLong = new AtomicLong(0)
 
@@ -280,7 +281,7 @@ class CachedSession(val conf: RiakConnectorConf, riakClient: RiakClient, afterCl
     refCount.decrementAndGet() match {
       case 0 =>
         unwrap().shutdown()
-        logDebug(s"Riak CachedSession was destroyed/shutdown: $conf")
+        logger.debug(s"Riak CachedSession was destroyed/shutdown: $conf")
         closed = true
       case 1 =>
         afterClose(this)
