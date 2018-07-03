@@ -23,13 +23,14 @@ import com.basho.riak.spark.rdd.connector.RiakConnector
 import com.basho.riak.spark.rdd.mapper.ReadDataMapperFactory
 import com.basho.riak.spark.rdd.partitioner._
 import com.basho.riak.spark.util.{CountingIterator, DataConvertingIterator}
+
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.rdd.RDD
-import org.apache.spark.riak.Logging
 import org.apache.spark.{Partition, SparkContext, TaskContext}
-
 import scala.language.existentials
 import scala.reflect.ClassTag
+
+import org.slf4j.{Logger, LoggerFactory}
 
 class RiakRDD[R] private[spark](@transient sc: SparkContext,
                                 val connector: RiakConnector,
@@ -40,7 +41,9 @@ class RiakRDD[R] private[spark](@transient sc: SparkContext,
                                )(implicit
                                  val ct: ClassTag[R],
                                  val rdmf: ReadDataMapperFactory[R]
-                               ) extends RDD[R](sc, Seq.empty) with Logging {
+                               ) extends RDD[R](sc, Seq.empty) {
+
+  val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   override def getPartitions: Array[Partition] = {
 

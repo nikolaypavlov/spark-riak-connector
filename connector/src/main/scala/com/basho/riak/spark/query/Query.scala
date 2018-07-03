@@ -24,15 +24,15 @@ import com.basho.riak.client.core.query.{Location, RiakObject}
 import com.basho.riak.client.core.util.HostAndPort
 import com.basho.riak.spark.rdd.connector.RiakConnector
 import com.basho.riak.spark.rdd.{BucketDef, ReadConf}
-import org.apache.spark.riak.Logging
-
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
+
+import org.slf4j.{Logger, LoggerFactory}
 
 /**
   * Generic Riak Query
   */
-trait Query[T] extends Serializable with Logging {
+trait Query[T] extends Serializable {
   type ResultT = (Location, RiakObject)
 
   def bucket: BucketDef
@@ -45,6 +45,7 @@ trait Query[T] extends Serializable with Logging {
 }
 
 trait LocationQuery[T] extends Query[T] {
+  val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   protected def nextLocationChunk(nextToken: Option[T]): (Option[T], Iterable[Location])
 
@@ -64,29 +65,29 @@ trait LocationQuery[T] extends Query[T] {
        */
       val groupedLocations = locations.grouped(session.minConnectionsPerNode)
       groupedLocations foreach { locations =>
-        logTrace(s"Fetching ${locations.size} values...")
+        logger.trace(s"Fetching ${locations.size} values...")
 
         val builder = new MultiFetch.Builder()
           .withOption(FetchValue.Option.R, Quorum.oneQuorum())
           .addLocations(locations.toSeq)
 
         session.execute(builder.build()) foreach { future =>
-          logTrace(s"Fetch value [${dataBuffer.size + 1}] for ${future.getQueryInfo}")
+          logger.trace(s"Fetch value [${dataBuffer.size + 1}] for ${future.getQueryInfo}")
 
           val location = future.getQueryInfo
           future.get() match {
             case r: FetchValue.Response if r.isNotFound =>
-              logWarning(s"Nothing was found for location '${future.getQueryInfo.getKeyAsString}'") // TODO: add proper error handling
+              logger.warn(s"Nothing was found for location '${future.getQueryInfo.getKeyAsString}'") // TODO: add proper error handling
             case r: FetchValue.Response if r.hasValues && r.getNumberOfValues > 1 =>
               throw new IllegalStateException(s"Fetch for '$location' returns more than one result: ${r.getNumberOfValues} actually")
             case r: FetchValue.Response =>
               dataBuffer += location -> r.getValue(classOf[RiakObject])
-            case _ => logWarning(s"There is no value for location '$location'")
+            case _ => logger.warn(s"There is no value for location '$location'")
           }
         }
       }
     }
-    logDebug(s"${dataBuffer.size} values were fetched")
+    logger.debug(s"${dataBuffer.size} values were fetched")
     dataBuffer
   }
 }

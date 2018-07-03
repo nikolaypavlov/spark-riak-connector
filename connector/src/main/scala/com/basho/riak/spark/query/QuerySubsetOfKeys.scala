@@ -19,6 +19,7 @@ package com.basho.riak.spark.query
 
 import com.basho.riak.client.core.query.Location
 import com.basho.riak.spark.util.CountingIterator
+import org.slf4j.{Logger, LoggerFactory}
 
 /**
  *
@@ -37,6 +38,8 @@ import com.basho.riak.spark.util.CountingIterator
 
   // scalastyle:off cyclomatic.complexity
   final override def nextLocationChunk(nextToken: Option[Int]): (Option[Int], Iterable[Location]) = {
+    val logger: Logger = LoggerFactory.getLogger(this.getClass)
+
     nextToken match {
       case None | Some(0) =>
         // it is either the first call or a kind of "random" read request of reading the first bulk
@@ -48,7 +51,7 @@ import com.basho.riak.spark.util.CountingIterator
 
       case Some(requested: Int) if requested != 0 && requested != _nextPos =>
         // random read request, _iterator should be adjusted
-        logWarning(s"nextLocationChunk: RANDOM READ WAS REQUESTED, it may cause performance issue:\n" +
+        logger.warn(s"nextLocationChunk: RANDOM READ WAS REQUESTED, it may cause performance issue:\n" +
           s"\texpected position: ${_nextPos}, while the requested read position is $requested")
         _nextPos = requested -1
         _iterator = Some(CountingIterator(keys.iterator.drop(_nextPos)))

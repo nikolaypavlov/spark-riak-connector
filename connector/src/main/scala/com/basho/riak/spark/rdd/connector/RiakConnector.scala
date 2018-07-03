@@ -19,7 +19,6 @@ package com.basho.riak.spark.rdd.connector
 
 
 import com.basho.riak.client.core.util.HostAndPort
-import org.apache.spark.riak.Logging
 import org.apache.spark.SparkConf
 
 /**
@@ -34,7 +33,7 @@ import org.apache.spark.SparkConf
   * @author Sergey Galkin <srggal at gmail dot com>
   */
 class RiakConnector(conf: RiakConnectorConf)
-  extends Serializable with Logging {
+  extends Serializable {
 
   private[this] val _config = conf
 
@@ -69,7 +68,7 @@ class RiakConnector(conf: RiakConnectorConf)
 /**
   * @author Sergey Galkin <srggal at gmail dot com>
   */
-object RiakConnector extends Logging {
+object RiakConnector {
   private var sessionCache = new SessionCache(100)
 
   /**

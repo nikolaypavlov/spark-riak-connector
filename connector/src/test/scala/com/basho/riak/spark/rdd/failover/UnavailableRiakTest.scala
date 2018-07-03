@@ -8,10 +8,12 @@ import org.junit.rules.ExpectedException
 import shaded.com.basho.riak.protobuf.RiakKvPB._
 import shaded.com.basho.riak.protobuf.RiakPB.RpbPair
 import shaded.com.google.protobuf.ByteString
-
 import scala.collection.JavaConverters._
 
+import org.slf4j.{Logger, LoggerFactory}
+
 class UnavailableRiakTest extends AbstractFailoverOfflineTest {
+  val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   val _expectedException: ExpectedException = ExpectedException.none()
 
@@ -51,7 +53,7 @@ class UnavailableRiakTest extends AbstractFailoverOfflineTest {
           .foreach {
             case (hp, rs) if stoppedNode.isEmpty =>
               rs.stop()
-              logInfo(s"Node '${hp.getHost}:${hp.getPort}' was stopped to simulate node crash")
+              logger.info(s"Node '${hp.getHost}:${hp.getPort}' was stopped to simulate node crash")
               stoppedNode = Some(hp)
             case _ =>
           }

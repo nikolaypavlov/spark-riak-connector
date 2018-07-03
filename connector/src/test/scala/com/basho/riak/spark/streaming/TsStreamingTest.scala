@@ -9,13 +9,17 @@ import com.basho.riak.spark.rdd.timeseries.{AbstractTimeSeriesTest, TimeSeriesDa
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper, SerializationFeature}
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
+
 import org.apache.spark.sql.Row
 import org.junit.Assert._
 import org.junit.experimental.categories.Category
 import org.junit.{After, Before, Test}
+import org.slf4j.{Logger, LoggerFactory}
 
 @Category(Array(classOf[RiakTSTests]))
 class TsStreamingTest extends AbstractTimeSeriesTest(false) with SparkStreamingFixture {
+
+  override val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   protected final val executorService = Executors.newCachedThreadPool()
   private val dataSource = new SocketStreamingDataSource
@@ -27,7 +31,7 @@ class TsStreamingTest extends AbstractTimeSeriesTest(false) with SparkStreamingF
       testData
         .map(tolerantMapper.writeValueAsString)
         .foreach(x => client.write(ByteBuffer.wrap(s"$x\n".getBytes)))
-      logInfo(s"${testData.length} values were send to client")
+      logger.info(s"${testData.length} values were send to client")
     })
   }
 

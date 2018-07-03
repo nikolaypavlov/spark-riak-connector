@@ -1,11 +1,12 @@
 package com.basho.riak.spark.streaming
 
-import org.apache.spark.riak.Logging
 import org.apache.spark.SparkContext
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.junit.{After, Before}
+import org.slf4j.{Logger, LoggerFactory}
 
-trait SparkStreamingFixture extends Logging {
+trait SparkStreamingFixture {
+  val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   protected var sc: SparkContext
 
@@ -16,12 +17,12 @@ trait SparkStreamingFixture extends Logging {
   @Before
   def startStreamingContext(): Unit = {
     ssc = new StreamingContext(sc, batchDuration)
-    logInfo("Streaming context created")
+    logger.info("Streaming context created")
   }
 
   @After
   def stopStreamingContext(): Unit = {
     Option(ssc).foreach(_.stop())
-    logInfo("Streaming context stopped")
+    logger.info("Streaming context stopped")
   }
 }

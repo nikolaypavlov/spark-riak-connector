@@ -24,11 +24,12 @@ import com.basho.riak.spark.query.QueryData
 import com.basho.riak.spark.rdd.connector.RiakConnector
 import com.basho.riak.spark.rdd.partitioner.PartitioningUtils._
 import com.basho.riak.spark.rdd.{BucketDef, ReadConf, RiakPartition}
-import org.apache.spark.Partition
-import org.apache.spark.riak.Logging
 
+import org.apache.spark.Partition
 import scala.collection.JavaConversions._
 import scala.util.control.Exception._
+
+import org.slf4j.{Logger, LoggerFactory}
 
 case class RiakLocalCoveragePartition[K](
   index: Int,
@@ -39,7 +40,9 @@ case class RiakLocalCoveragePartition[K](
 /**
  * Obtains Coverage Plan and creates a separate partition for each Coverage Entry
  */
-object RiakCoveragePlanBasedPartitioner extends Logging {
+object RiakCoveragePlanBasedPartitioner {
+  val logger: Logger = LoggerFactory.getLogger(this.getClass)
+
   def partitions[K](connector: RiakConnector, bucket: BucketDef, readConf: ReadConf, queryData: QueryData[K]): Array[Partition] = {
 
     val partitionsCount = readConf.splitCount
@@ -58,7 +61,7 @@ object RiakCoveragePlanBasedPartitioner extends Logging {
     }
 
     // TODO: add proper Coverage Plan logging
-    logTrace(s"Coverage plan:\n\t${coveragePlan.mkString("\n\t")}")
+    logger.trace(s"Coverage plan:\n\t${coveragePlan.mkString("\n\t")}")
 
     val hosts = coveragePlan.hosts
 
