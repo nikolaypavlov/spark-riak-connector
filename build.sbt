@@ -210,6 +210,8 @@ lazy val customMergeStrategy = assemblyMergeStrategy in assembly := {
   case "application.conf"                            => MergeStrategy.concat
   case "reference.conf"                              => MergeStrategy.concat
   case "unwanted.txt"                                => MergeStrategy.discard
+  case PathList(ps @ _*) if ps.last endsWith ".pyc"  => MergeStrategy.discard
+  case PathList(ps @ _*) if ps.last endsWith ".py"   => MergeStrategy.discard
   case x =>
     val oldStrategy = (assemblyMergeStrategy in assembly).value
     oldStrategy(x)
