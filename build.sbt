@@ -122,8 +122,8 @@ lazy val sparkRiakConnectorTestUtils = (project in file("test-utils"))
 
 lazy val commonSettings = Seq(
   organization := "com.basho.riak",
-  version := "1.6.3-SNAPSHOT",
-  scalaVersion := "2.11.8",
+  version := "2.0.0-SNAPSHOT",
+  scalaVersion := "2.11.12",
   crossPaths := true,
   spName := s"basho/$namespace",
   sparkVersion := Versions.spark,
@@ -132,7 +132,7 @@ lazy val commonSettings = Seq(
   parallelExecution in Test := false,
   testOptions += Tests.Argument(TestFrameworks.JUnit, "-q", "-v", "--exclude-categories=com.basho.riak.spark.rdd.RiakKVNotAvailableFeaturesTest"),
   scalacOptions in (Compile,doc) := Seq("-groups", "-implicits"),
-  crossScalaVersions := Seq("2.10.6", "2.11.7"),
+  crossScalaVersions := Seq("2.10.6", "2.11.12"),
   aggregate in doc := true,
   homepage := Some(url("https://github.com/basho/spark-riak-connector")),
   licenses := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt"))
